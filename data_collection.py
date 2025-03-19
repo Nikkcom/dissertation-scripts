@@ -6,7 +6,7 @@ from datetime import datetime
 from scapy.all import ARP, IP, ICMP, sniff
 
 # Network Configuration
-INTERFACE = "eth0"  # Comamnd to check interface = ip a
+INTERFACE = "ens33"  # Comamnd to check interface = ip a
 SERVER_IP = "192.168.1.20"  # Change this to your target server
 SERVER_URL = f"http://{SERVER_IP}/"
 CSV_FILENAME = "network_metrics.csv"

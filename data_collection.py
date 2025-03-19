@@ -1,11 +1,9 @@
-import time
 import csv
 import requests
 import signal
+import time
 from datetime import datetime
-from scapy.sendrecv import sniff
-from scapy.layers.inet import IP, ICMP
-from scapy.layers.l2 import ARP
+from scapy.all import ARP, IP, ICMP, sniff
 
 # Network Configuration
 INTERFACE = "eth0"  # Comamnd to check interface = ip a

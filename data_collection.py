@@ -73,8 +73,12 @@ def capture_arp_packets(packet):
 
 def arp_sniffer():
     """Continuously sniff ARP packets."""
-    sniff(prn=lambda pkt: (track_arp_requests(pkt), capture_arp_packets(pkt)),
+    sniff(prn=process_packet,
           store=False, filter="arp", iface=INTERFACE, verbose=False)
+
+def process_packet(packet):
+    track_arp_requests(packet)
+    capture_arp_packets(packet)
 
 def perform_packet_loss_test():
     """Perform an ICMP ping test and update packet loss counters."""
@@ -82,7 +86,7 @@ def perform_packet_loss_test():
     lost = 0
     for _ in range(total_sent):
         pkt = IP(dst=SERVER_IP) / ICMP()
-        reply = sr1(pkt, timeout=1, verbose=False)
+        reply = sr1(pkt, timeout=1)
         if reply is None:
             lost += 1
     packet_loss["sent"] += total_sent

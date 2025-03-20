@@ -1,10 +1,6 @@
 import csv
 import requests
 import signal
-import time
-import threading
-from datetime import datetime
-from collections import defaultdict
 from scapy.all import *
 
 # Network Configuration

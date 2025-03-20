@@ -4,6 +4,7 @@ from scapy.all import ARP, Ether, srp, send, conf, get_if_hwaddr
 # Define the target (victim) and the IP we want to impersonate.
 TARGET_IP = "192.168.1.10"      # Victim's IP address.
 SPOOFED_IP = "192.168.1.20"       # The IP address to impersonate.
+conf.iface = "eth0"         # Sets the default interface to eth0
 
 def get_mac(ip):
     """

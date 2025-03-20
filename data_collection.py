@@ -74,7 +74,7 @@ def capture_arp_packets(packet):
 def arp_sniffer():
     """Continuously sniff ARP packets."""
     sniff(prn=lambda pkt: (track_arp_requests(pkt), capture_arp_packets(pkt)),
-          store=False, filter="arp", iface=INTERFACE)
+          store=False, filter="arp", iface=INTERFACE, verbose=False)
 
 def perform_packet_loss_test():
     """Perform an ICMP ping test and update packet loss counters."""

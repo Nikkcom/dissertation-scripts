@@ -18,24 +18,51 @@ arp_replies_received = defaultdict(int)  # Count ARP replies received per IP
 log_entries = []  # Temporary storage for log entries
 stop_signal = False
 
+# Previous values for calculating deltas
+previous_metrics = {
+    "arp_solicited": 0,
+    "arp_unsolicited": 0,
+    "lost_packets": 0,
+    "total_packets": 0,
+}
+
 
 def initialize_csv():
     """Initialize the CSV file with headers."""
     with open(CSV_FILENAME, "w", newline="") as file:
         writer = csv.writer(file)
-        writer.writerow(["round-trip-time", "arp-solicited", "arp-unsolicited", "lost-packets", "total-packets"])
+        writer.writerow(
+            ["timestamp", "round-trip-time", "arp-solicited", "arp-unsolicited", "lost-packets", "total-packets",
+             "delta_arp_solicited", "delta_arp_unsolicited", "delta_lost_packets", "delta_total_packets"])
 
 
 def log_to_csv():
     """Write collected metrics to the CSV file."""
+    global previous_metrics
     with open(CSV_FILENAME, "a", newline="") as file:
         writer = csv.writer(file)
         total_packets = packet_loss["sent"]
         lost_packets = packet_loss["lost"]
         rtt = rtt_values[-1] if rtt_values else "N/A"
-        writer.writerow([rtt, arp_replies["solicited"], arp_replies["unsolicited"], lost_packets, total_packets])
-    print(
-        f"[INFO] Logged data to CSV: RTT={rtt}, Solicited ARP={arp_replies['solicited']}, Unsolicited ARP={arp_replies['unsolicited']}, Lost Packets={lost_packets}, Total Packets={total_packets}")
+
+        delta_arp_solicited = arp_replies["solicited"] - previous_metrics["arp_solicited"]
+        delta_arp_unsolicited = arp_replies["unsolicited"] - previous_metrics["arp_unsolicited"]
+        delta_lost_packets = lost_packets - previous_metrics["lost_packets"]
+        delta_total_packets = total_packets - previous_metrics["total_packets"]
+
+        writer.writerow([
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S"), rtt, arp_replies["solicited"], arp_replies["unsolicited"],
+            lost_packets, total_packets, delta_arp_solicited, delta_arp_unsolicited, delta_lost_packets,
+            delta_total_packets
+        ])
+
+        previous_metrics = {
+            "arp_solicited": arp_replies["solicited"],
+            "arp_unsolicited": arp_replies["unsolicited"],
+            "lost_packets": lost_packets,
+            "total_packets": total_packets,
+        }
+    print(f"[INFO] Logged data to CSV at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
 
 def track_arp_requests(packet):

@@ -15,10 +15,9 @@ arp_replies = {"solicited": 0, "unsolicited": 0}
 packet_loss = {"sent": 0, "lost": 0}
 arp_requests_sent = defaultdict(int)  # Count ARP requests sent per IP
 arp_replies_received = defaultdict(int)  # Count ARP replies received per IP
-log_entries = []  # Temporary storage for log entries
 stop_signal = False
 
-# Previous values for calculating deltas
+# Previous cumulative values for calculating deltas
 previous_metrics = {
     "arp_solicited": 0,
     "arp_unsolicited": 0,
@@ -26,18 +25,17 @@ previous_metrics = {
     "total_packets": 0,
 }
 
-
 def initialize_csv():
-    """Initialize the CSV file with headers."""
+    """Initialize the CSV file with headers (only logging deltas)."""
     with open(CSV_FILENAME, "w", newline="") as file:
         writer = csv.writer(file)
         writer.writerow(
-            ["timestamp", "round-trip-time", "arp-solicited", "arp-unsolicited", "lost-packets", "total-packets",
-             "delta_arp_solicited", "delta_arp_unsolicited", "delta_lost_packets", "delta_total_packets"])
-
+            ["timestamp", "round-trip-time", "delta_arp_solicited", "delta_arp_unsolicited",
+             "delta_lost_packets", "delta_total_packets"]
+        )
 
 def log_to_csv():
-    """Write collected metrics to the CSV file."""
+    """Write only the changes (deltas) since the last log to the CSV file."""
     global previous_metrics
     with open(CSV_FILENAME, "a", newline="") as file:
         writer = csv.writer(file)
@@ -45,17 +43,23 @@ def log_to_csv():
         lost_packets = packet_loss["lost"]
         rtt = rtt_values[-1] if rtt_values else "N/A"
 
+        # Calculate deltas
         delta_arp_solicited = arp_replies["solicited"] - previous_metrics["arp_solicited"]
         delta_arp_unsolicited = arp_replies["unsolicited"] - previous_metrics["arp_unsolicited"]
         delta_lost_packets = lost_packets - previous_metrics["lost_packets"]
         delta_total_packets = total_packets - previous_metrics["total_packets"]
 
+        # Log only the changes
         writer.writerow([
-            datetime.now().strftime("%Y-%m-%d %H:%M:%S"), rtt, arp_replies["solicited"], arp_replies["unsolicited"],
-            lost_packets, total_packets, delta_arp_solicited, delta_arp_unsolicited, delta_lost_packets,
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            rtt,
+            delta_arp_solicited,
+            delta_arp_unsolicited,
+            delta_lost_packets,
             delta_total_packets
         ])
 
+        # Update previous values to the current cumulative counts
         previous_metrics = {
             "arp_solicited": arp_replies["solicited"],
             "arp_unsolicited": arp_replies["unsolicited"],
@@ -64,14 +68,12 @@ def log_to_csv():
         }
     print(f"[INFO] Logged data to CSV at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
-
 def track_arp_requests(packet):
     """Track outgoing ARP requests."""
     global arp_requests_sent
     if packet.haslayer(ARP) and packet[ARP].op == 1:  # ARP Request
         target_ip = packet[ARP].pdst
         arp_requests_sent[target_ip] += 1  # Increment request count
-
 
 def capture_arp_packets(packet):
     """Capture ARP replies and classify them based on request-reply balance."""
@@ -85,7 +87,6 @@ def capture_arp_packets(packet):
         else:
             arp_replies["solicited"] += 1
 
-
 def reset_arp_counters():
     """Periodically reset ARP counters to maintain real-time tracking."""
     global stop_signal
@@ -94,12 +95,10 @@ def reset_arp_counters():
         arp_requests_sent.clear()
         arp_replies_received.clear()
 
-
 def arp_sniffer():
     """Continuously sniff ARP packets in a separate thread."""
-    sniff(prn=lambda pkt: (track_arp_requests(pkt), capture_arp_packets(pkt)), store=False, filter="arp",
-          iface=INTERFACE)
-
+    sniff(prn=lambda pkt: (track_arp_requests(pkt), capture_arp_packets(pkt)),
+          store=False, filter="arp", iface=INTERFACE)
 
 def measure_packet_loss():
     """Continuously measure packet loss in a separate thread."""
@@ -117,7 +116,6 @@ def measure_packet_loss():
         log_to_csv()
         time.sleep(5)
 
-
 def measure_http_rtt():
     """Continuously measure HTTP RTT in a separate thread."""
     global stop_signal
@@ -132,14 +130,12 @@ def measure_http_rtt():
         log_to_csv()
         time.sleep(2)
 
-
 def handle_interrupt(signum, frame):
     """Handle KeyboardInterrupt (Ctrl+C) to safely write logs to CSV."""
     global stop_signal
     stop_signal = True
     log_to_csv()
     exit(0)
-
 
 # Main execution
 if __name__ == "__main__":

@@ -52,7 +52,7 @@ def log_to_csv(rtt, delta_arp_solicited, delta_arp_unsolicited, delta_lost_packe
             delta_lost_packets,
             delta_total_packets
         ])
-    print(f"[INFO] Logged RTT: {rtt:.6f} - " +
+    print(f"[INFO] Logged RTT: {rtt} - " +
           f"ARP Solicited: {delta_arp_solicited} - " +
           f"ARP Unsolicited: {delta_arp_unsolicited} - "
           f"Packet Loss: {delta_lost_packets}/{delta_total_packets}")
